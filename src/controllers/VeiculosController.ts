@@ -1,43 +1,36 @@
 import { Request, Response } from "express";
 
 import database from "../database/connection";
+import areTheseObjectsEquals from "../utils/areTheseObjectsEquals";
 
 export default class VeiculosController {
   async index(request: Request, response: Response) {
-    try {
-      const { page = 1 } = request.query; // Implementando paginação
+    const { page = 1 } = request.query; // Implementando paginação
 
-      // Usando promisses com funções assíncronas (async await)
-      const veiculos = await database("veiculo")
-        .limit(10) // Limite de elementos por página
-        .offset((Number(page) - 1) * 10); // Para fazer o deslocamento do pedido de registros
+    // Usando promisses com funções assíncronas (async await)
+    const veiculos = await database("veiculo")
+      .limit(10) // Limite de elementos por página
+      .offset((Number(page) - 1) * 10); // Para fazer o deslocamento do pedido de registros
 
-      return response.json(veiculos);
-    } catch (err) {
-      console.error(err);
-
-      return response.status(400).json({
-        error:
-          'Não foi possível listar os registros da tabela "veiculo". It was not possible to list the records in the "veiculo" table',
-      });
-    }
+    return !areTheseObjectsEquals(veiculos, [])
+      ? response.json(veiculos)
+      : response.status(404).json({
+          error:
+            'Não foi possível encontrar estes registros da tabela "veiculo". It was not possible to find these records in the "veiculo" table',
+        });
   }
 
   async indexOneByID(request: Request, response: Response) {
-    try {
-      const { id } = request.params;
+    const { id } = request.params;
 
-      const veiculo = await database("veiculo").where("veiculo.id", "=", id);
+    const veiculo = await database("veiculo").where("veiculo.id", "=", id);
 
-      return response.json(veiculo);
-    } catch (err) {
-      console.error(err);
-
-      response.status(404).json({
-        error:
-          'Não foi possível encontrar este registro da tabela "veiculo". It was not possible to find this record in the "veiculo" table',
-      });
-    }
+    return !areTheseObjectsEquals(veiculo, [])
+      ? response.json(veiculo)
+      : response.status(404).json({
+          error:
+            'Não foi possível encontrar este registro da tabela "veiculo". It was not possible to find this record in the "veiculo" table',
+        });
   }
 
   async create(request: Request, response: Response) {

@@ -1,43 +1,36 @@
 import { Request, Response } from "express";
 
 import database from "../database/connection";
+import areTheseObjectsEquals from "../utils/areTheseObjectsEquals";
 
 export default class LinhasController {
   async index(request: Request, response: Response) {
-    try {
-      const { page = 1 } = request.query; // Implementando paginação
+    const { page = 1 } = request.query; // Implementando paginação
 
-      // Usando promisses com funções assíncronas (async await)
-      const linhas = await database("linha")
-        .limit(10) // Limite de elementos por página
-        .offset((Number(page) - 1) * 10); // Para fazer o deslocamento do pedido de registros
+    // Usando promisses com funções assíncronas (async await)
+    const linhas = await database("linha")
+      .limit(10) // Limite de elementos por página
+      .offset((Number(page) - 1) * 10); // Para fazer o deslocamento do pedido de registros
 
-      return response.json(linhas);
-    } catch (err) {
-      console.error(err);
-
-      return response.status(400).json({
-        error:
-          'Não foi possível listar os registros da tabela "linha". It was not possible to list the records in the "linha" table',
-      });
-    }
+    return !areTheseObjectsEquals(linhas, [])
+      ? response.json(linhas)
+      : response.status(404).json({
+          error:
+            'Não foi possível listar estes registros da tabela "linha". It was not possible to list these records in the "linha" table',
+        });
   }
 
   async indexOneByID(request: Request, response: Response) {
-    try {
-      const { id } = request.params;
+    const { id } = request.params;
 
-      const linha = await database("linha").where("linha.id", "=", id);
+    const linha = await database("linha").where("linha.id", "=", id);
 
-      return response.json(linha);
-    } catch (err) {
-      console.error(err);
-
-      response.status(404).json({
-        error:
-          'Não foi possível encontrar este registro da tabela "linha". It was not possible to find this record in the "linha" table',
-      });
-    }
+    return !areTheseObjectsEquals(linha, [])
+      ? response.json(linha)
+      : response.status(404).json({
+          error:
+            'Não foi possível encontrar este registro da tabela "linha". It was not possible to find this record in the "linha" table',
+        });
   }
 
   async indexVeiculosPorLinha(request: Request, response: Response) {
@@ -50,7 +43,12 @@ export default class LinhasController {
         .whereRaw("`linha`.`id` = ??", Number(id)); // e o ID na tabela veículo bate com o passado nos parâmetros da requisição
     });
 
-    return response.json(veiculos);
+    return !areTheseObjectsEquals(veiculos, [])
+      ? response.json(veiculos)
+      : response.status(404).json({
+          error:
+            'Não foi possível listar estes registros da tabela "linha". It was not possible to list this records in the "linha" table',
+        });
   }
 
   async create(request: Request, response: Response) {

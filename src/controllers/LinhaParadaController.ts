@@ -1,45 +1,38 @@
 import { Request, Response } from "express";
 
 import database from "../database/connection";
+import areTheseObjectsEquals from "../utils/areTheseObjectsEquals";
 
 export default class LinhaParadaController {
   async index(request: Request, response: Response) {
-    try {
-      const { page = 1 } = request.query; // Implementando paginação
+    const { page = 1 } = request.query; // Implementando paginação
 
-      // Usando promisses com funções assíncronas (async await)
-      const paradas = await database("linha_parada")
-        .limit(10) // Limite de elementos por página
-        .offset((Number(page) - 1) * 10); // Para fazer o deslocamento do pedido de registros
+    // Usando promisses com funções assíncronas (async await)
+    const registros_linha_parada = await database("linha_parada")
+      .limit(10) // Limite de elementos por página
+      .offset((Number(page) - 1) * 10); // Para fazer o deslocamento do pedido de registros
 
-      return response.json(paradas);
-    } catch (err) {
-      console.error(err);
-
-      return response.status(400).json({
-        error:
-          'Não foi possível listar os registros da tabela "linha_parada". It was not possible to list the records in the "linha_parada" table',
-      });
-    }
+    return !areTheseObjectsEquals(registros_linha_parada, [])
+      ? response.json(registros_linha_parada)
+      : response.status(404).json({
+          error:
+            'Não foi possível encontrar estes registros da tabela "linha_parada". It was not possible to find these records in the "linha_parada" table',
+        });
   }
 
   async indexOneByID(request: Request, response: Response) {
-    try {
-      const { linha_id, parada_id } = request.query;
+    const { linha_id, parada_id } = request.query;
 
-      const linha_parada = await database("linha_parada")
-        .where("linha_parada.linha_id", "=", [Number(linha_id)])
-        .where("linha_parada.parada_id", "=", [Number(parada_id)]);
+    const linha_parada = await database("linha_parada")
+      .where("linha_parada.linha_id", "=", [Number(linha_id)])
+      .where("linha_parada.parada_id", "=", [Number(parada_id)]);
 
-      return response.json(linha_parada);
-    } catch (err) {
-      console.error(err);
-
-      response.status(404).json({
-        error:
-          'Não foi possível encontrar este registro da tabela "linha_parada". It was not possible to find this record in the "linha_parada" table',
-      });
-    }
+    return !areTheseObjectsEquals(linha_parada, [])
+      ? response.json(linha_parada)
+      : response.status(404).json({
+          error:
+            'Não foi possível encontrar este registro da tabela "linha_parada". It was not possible to find this records in the "linha_parada" table',
+        });
   }
 
   async create(request: Request, response: Response) {
